@@ -1,4 +1,3 @@
-const { Markup } = require('telegraf');
 const { requireRole } = require('../middlewares/auth');
 const { addChannel, removeChannel, getAllChannels } = require('../services/channelService');
 const { getUserCount, getAllUserIds, setUserRole, getUserByTelegramId } = require('../services/userService');
@@ -13,21 +12,20 @@ function registerAdminHandler(bot) {
   // ============================================================
 
   /**
-   * /add_channel - Add a mandatory subscription channel
+   * /add_channel - Majburiy obuna kanalini qo'shish
    * Usage: /add_channel <channel_id> <invite_link>
-   * Example: /add_channel -1001234567890 https://t.me/+AbCdEfG
    */
   bot.command('add_channel', requireRole('superadmin'), async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
 
     if (args.length < 2) {
       return ctx.reply(
-        '📝 *Usage:* `/add_channel <channel_id> <invite_link>`\n\n' +
-        '*Example:*\n`/add_channel -1001234567890 https://t.me/+AbCdEfG`\n\n' +
-        '💡 *How to get Channel ID:*\n' +
-        '1. Add @userinfobot to the channel\n' +
-        '2. Forward a message from the channel to @userinfobot\n' +
-        '3. Copy the numeric ID (starts with -100)',
+        '📝 *Foydalanish:* `/add_channel <kanal_id> <havola>`\n\n' +
+        '*Misol:*\n`/add_channel -1001234567890 https://t.me/+AbCdEfG`\n\n' +
+        '💡 *Kanal ID ni qanday olish:*\n' +
+        '1. @userinfobot ni kanalga qo\'shing\n' +
+        '2. Kanaldan xabarni @userinfobot ga forward qiling\n' +
+        '3. Raqamli ID ni ko\'chiring (-100 bilan boshlanadi)',
         { parse_mode: 'Markdown' }
       );
     }
@@ -36,58 +34,55 @@ function registerAdminHandler(bot) {
     const inviteLink = args[1];
 
     if (isNaN(channelId)) {
-      return ctx.reply('❌ Invalid channel ID. Must be a number (e.g., -1001234567890).');
+      return ctx.reply('❌ Noto\'g\'ri kanal ID. Raqam bo\'lishi kerak (masalan, -1001234567890).');
     }
 
     if (!inviteLink.startsWith('https://t.me/')) {
-      return ctx.reply('❌ Invalid invite link. Must start with https://t.me/');
+      return ctx.reply('❌ Noto\'g\'ri havola. https://t.me/ bilan boshlanishi kerak.');
     }
 
     try {
-      // Try to get channel info
       let channelTitle = null;
       try {
         const chatInfo = await bot.telegram.getChat(channelId);
         channelTitle = chatInfo.title;
       } catch {
-        // Bot might not be admin in the channel yet
+        // Bot kanalda admin bo'lmasligi mumkin
       }
 
       const channel = await addChannel(channelId, inviteLink, channelTitle);
       await ctx.reply(
-        `✅ *Channel added successfully!*\n\n` +
-        `📢 ${channel.channel_title || 'Unknown'}\n` +
+        `✅ *Kanal muvaffaqiyatli qo'shildi!*\n\n` +
+        `📢 ${channel.channel_title || 'Noma\'lum'}\n` +
         `🆔 \`${channel.channel_id}\`\n` +
         `🔗 ${channel.invite_link}`,
         { parse_mode: 'Markdown' }
       );
     } catch (err) {
-      console.error('Add channel error:', err.message);
-      await ctx.reply('❌ Failed to add channel. Please try again.');
+      console.error('Kanal qo\'shish xatosi:', err.message);
+      await ctx.reply('❌ Kanalni qo\'shib bo\'lmadi. Qaytadan urinib ko\'ring.');
     }
   });
 
   /**
-   * /remove_channel - Remove a mandatory subscription channel
-   * Usage: /remove_channel <channel_id>
+   * /remove_channel - Majburiy obuna kanalini o'chirish
    */
   bot.command('remove_channel', requireRole('superadmin'), async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
 
     if (args.length < 1) {
-      // Show list of current channels
       const channels = await getAllChannels();
       if (channels.length === 0) {
-        return ctx.reply('📋 No mandatory channels configured.');
+        return ctx.reply('📋 Majburiy kanallar yo\'q.');
       }
 
       const list = channels
-        .map((ch, i) => `${i + 1}. ${ch.channel_title || 'Unknown'} — \`${ch.channel_id}\``)
+        .map((ch, i) => `${i + 1}. ${ch.channel_title || 'Noma\'lum'} — \`${ch.channel_id}\``)
         .join('\n');
 
       return ctx.reply(
-        `📋 *Current Channels:*\n\n${list}\n\n` +
-        `*Usage:* \`/remove_channel <channel_id>\``,
+        `📋 *Hozirgi kanallar:*\n\n${list}\n\n` +
+        `*Foydalanish:* \`/remove_channel <kanal_id>\``,
         { parse_mode: 'Markdown' }
       );
     }
@@ -95,43 +90,43 @@ function registerAdminHandler(bot) {
     const channelId = parseInt(args[0], 10);
 
     if (isNaN(channelId)) {
-      return ctx.reply('❌ Invalid channel ID.');
+      return ctx.reply('❌ Noto\'g\'ri kanal ID.');
     }
 
     const removed = await removeChannel(channelId);
 
     if (removed) {
-      await ctx.reply(`✅ Channel \`${channelId}\` removed successfully.`, { parse_mode: 'Markdown' });
+      await ctx.reply(`✅ Kanal \`${channelId}\` muvaffaqiyatli o'chirildi.`, { parse_mode: 'Markdown' });
     } else {
-      await ctx.reply('❌ Channel not found.');
+      await ctx.reply('❌ Kanal topilmadi.');
     }
   });
 
   /**
-   * /channels - List all mandatory channels
+   * /channels - Barcha majburiy kanallar ro'yxati
    */
   bot.command('channels', requireRole('superadmin'), async (ctx) => {
     const channels = await getAllChannels();
 
     if (channels.length === 0) {
-      return ctx.reply('📋 No mandatory channels configured.\n\nUse /add_channel to add one.');
+      return ctx.reply('📋 Majburiy kanallar yo\'q.\n\nQo\'shish uchun /add_channel buyrug\'ini ishlating.');
     }
 
     const list = channels
       .map((ch, i) =>
-        `${i + 1}. ${ch.channel_title || 'Unknown'}\n   🆔 \`${ch.channel_id}\`\n   🔗 ${ch.invite_link}`
+        `${i + 1}. ${ch.channel_title || 'Noma\'lum'}\n   🆔 \`${ch.channel_id}\`\n   🔗 ${ch.invite_link}`
       )
       .join('\n\n');
 
-    await ctx.reply(`📋 *Mandatory Channels (${channels.length}):*\n\n${list}`, {
+    await ctx.reply(`📋 *Majburiy kanallar (${channels.length}):*\n\n${list}`, {
       parse_mode: 'Markdown',
     });
   });
 
   /**
-   * /stats - Show bot statistics
+   * /stats - Bot statistikasi (admin va superadmin uchun)
    */
-  bot.command('stats', requireRole('superadmin'), async (ctx) => {
+  bot.command('stats', requireRole('admin'), async (ctx) => {
     try {
       const [userCount, movieCount, channels] = await Promise.all([
         getUserCount(),
@@ -140,29 +135,28 @@ function registerAdminHandler(bot) {
       ]);
 
       await ctx.reply(
-        `📊 *Bot Statistics*\n\n` +
-        `👥 Total Users: *${userCount.toLocaleString()}*\n` +
-        `🎬 Total Movies: *${movieCount.toLocaleString()}*\n` +
-        `📢 Mandatory Channels: *${channels.length}*`,
+        `📊 *Bot Statistikasi*\n\n` +
+        `👥 Jami foydalanuvchilar: *${userCount.toLocaleString()}*\n` +
+        `🎬 Jami kinolar: *${movieCount.toLocaleString()}*\n` +
+        `📢 Majburiy kanallar: *${channels.length}*`,
         { parse_mode: 'Markdown' }
       );
     } catch (err) {
-      console.error('Stats error:', err.message);
-      await ctx.reply('❌ Failed to fetch statistics.');
+      console.error('Statistika xatosi:', err.message);
+      await ctx.reply('❌ Statistikani olishda xatolik yuz berdi.');
     }
   });
 
   /**
-   * /add_admin - Promote a user to admin
-   * Usage: /add_admin <telegram_id>
+   * /add_admin - Foydalanuvchini admin qilish
    */
   bot.command('add_admin', requireRole('superadmin'), async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
 
     if (args.length < 1) {
       return ctx.reply(
-        '📝 *Usage:* `/add_admin <telegram_id>`\n\n' +
-        '💡 Ask the user to send their ID using @userinfobot',
+        '📝 *Foydalanish:* `/add_admin <telegram_id>`\n\n' +
+        '💡 Foydalanuvchi ID sini @userinfobot orqali bilib olish mumkin',
         { parse_mode: 'Markdown' }
       );
     }
@@ -170,70 +164,69 @@ function registerAdminHandler(bot) {
     const targetId = parseInt(args[0], 10);
 
     if (isNaN(targetId)) {
-      return ctx.reply('❌ Invalid Telegram ID.');
+      return ctx.reply('❌ Noto\'g\'ri Telegram ID.');
     }
 
     const user = await getUserByTelegramId(targetId);
 
     if (!user) {
-      return ctx.reply('❌ User not found. They must start the bot first.');
+      return ctx.reply('❌ Foydalanuvchi topilmadi. U avval botni ishga tushirishi kerak (/start).');
     }
 
     if (user.role === 'superadmin') {
-      return ctx.reply('⚠️ Cannot change superadmin role.');
+      return ctx.reply('⚠️ Super admin rolini o\'zgartirish mumkin emas.');
     }
 
     if (user.role === 'admin') {
-      return ctx.reply('ℹ️ User is already an admin.');
+      return ctx.reply('ℹ️ Bu foydalanuvchi allaqachon admin.');
     }
 
     const updated = await setUserRole(targetId, 'admin');
     await ctx.reply(
-      `✅ *Admin added!*\n\n` +
+      `✅ *Admin qo'shildi!*\n\n` +
       `👤 ${updated.first_name || updated.username || targetId}\n` +
       `🆔 \`${updated.telegram_id}\`\n` +
-      `🔑 Role: *admin*`,
+      `🔑 Roli: *admin*`,
       { parse_mode: 'Markdown' }
     );
   });
 
   /**
-   * /remove_admin - Demote an admin to user
-   * Usage: /remove_admin <telegram_id>
+   * /remove_admin - Adminni oddiy foydalanuvchiga aylantirish
    */
   bot.command('remove_admin', requireRole('superadmin'), async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
 
     if (args.length < 1) {
-      return ctx.reply('📝 *Usage:* `/remove_admin <telegram_id>`', { parse_mode: 'Markdown' });
+      return ctx.reply('📝 *Foydalanish:* `/remove_admin <telegram_id>`', { parse_mode: 'Markdown' });
     }
 
     const targetId = parseInt(args[0], 10);
 
     if (isNaN(targetId)) {
-      return ctx.reply('❌ Invalid Telegram ID.');
+      return ctx.reply('❌ Noto\'g\'ri Telegram ID.');
     }
 
     const user = await getUserByTelegramId(targetId);
 
     if (!user) {
-      return ctx.reply('❌ User not found.');
+      return ctx.reply('❌ Foydalanuvchi topilmadi.');
     }
 
     if (user.role === 'superadmin') {
-      return ctx.reply('⚠️ Cannot demote a superadmin.');
+      return ctx.reply('⚠️ Super adminni tushirish mumkin emas.');
     }
 
     if (user.role === 'user') {
-      return ctx.reply('ℹ️ User is not an admin.');
+      return ctx.reply('ℹ️ Bu foydalanuvchi admin emas.');
     }
 
     const updated = await setUserRole(targetId, 'user');
     await ctx.reply(
-      `✅ Admin removed.\n\n` +
+      `✅ Admin o'chirildi.\n\n` +
       `👤 ${updated.first_name || updated.username || targetId}\n` +
       `🆔 \`${updated.telegram_id}\`\n` +
-      `🔑 Role: *user*`,
+      `🔑 Roli: *foydalanuvchi*`,
       { parse_mode: 'Markdown' }
     );
   });
@@ -243,37 +236,35 @@ function registerAdminHandler(bot) {
   // ============================================================
 
   /**
-   * /broadcast - Send a message to all users
-   * Usage: /broadcast <message>
+   * /broadcast - Barcha foydalanuvchilarga xabar yuborish
    */
   bot.command('broadcast', requireRole('admin'), async (ctx) => {
     const message = ctx.message.text.replace(/^\/broadcast\s*/, '').trim();
 
     if (!message) {
       return ctx.reply(
-        '📝 *Usage:* `/broadcast Your message here`\n\n' +
-        '⚠️ This will send the message to ALL bot users.',
+        '📝 *Foydalanish:* `/broadcast Sizning xabaringiz`\n\n' +
+        '⚠️ Bu xabar BARCHA bot foydalanuvchilariga yuboriladi.',
         { parse_mode: 'Markdown' }
       );
     }
 
-    await ctx.reply('📡 Broadcasting message... This may take a while.');
+    await ctx.reply('📡 Xabar yuborilmoqda... Bu biroz vaqt olishi mumkin.');
 
     try {
       const userIds = await getAllUserIds();
       let sent = 0;
       let failed = 0;
 
-      // Process in batches to respect Telegram rate limits (30 msgs/sec)
       const BATCH_SIZE = 25;
-      const BATCH_DELAY = 1500; // 1.5 seconds between batches
+      const BATCH_DELAY = 1500;
 
       for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
         const batch = userIds.slice(i, i + BATCH_SIZE);
 
         const results = await Promise.allSettled(
           batch.map((userId) =>
-            bot.telegram.sendMessage(userId, `📢 *Broadcast*\n\n${message}`, {
+            bot.telegram.sendMessage(userId, `📢 *E'lon*\n\n${message}`, {
               parse_mode: 'Markdown',
             })
           )
@@ -287,27 +278,26 @@ function registerAdminHandler(bot) {
           }
         }
 
-        // Rate limit delay between batches
         if (i + BATCH_SIZE < userIds.length) {
           await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
         }
       }
 
       await ctx.reply(
-        `📊 *Broadcast Complete*\n\n` +
-        `✅ Sent: *${sent}*\n` +
-        `❌ Failed: *${failed}*\n` +
-        `📨 Total: *${userIds.length}*`,
+        `📊 *Xabar yuborish yakunlandi*\n\n` +
+        `✅ Yuborildi: *${sent}*\n` +
+        `❌ Xatolik: *${failed}*\n` +
+        `📨 Jami: *${userIds.length}*`,
         { parse_mode: 'Markdown' }
       );
     } catch (err) {
-      console.error('Broadcast error:', err.message);
-      await ctx.reply('❌ Broadcast failed. Check logs for details.');
+      console.error('Broadcast xatosi:', err.message);
+      await ctx.reply('❌ Xabar yuborishda xatolik. Loglarni tekshiring.');
     }
   });
 
   /**
-   * /admin - Show admin help
+   * /admin - Admin panel ko'rsatish
    */
   bot.command('admin', requireRole('admin'), async (ctx) => {
     const user = ctx.state.user;
@@ -317,18 +307,19 @@ function registerAdminHandler(bot) {
 
     if (isSuperAdmin) {
       helpText +=
-        '*Super Admin Commands:*\n' +
-        '├ /add\\_channel — Add mandatory channel\n' +
-        '├ /remove\\_channel — Remove channel\n' +
-        '├ /channels — List all channels\n' +
-        '├ /stats — Bot statistics\n' +
-        '├ /add\\_admin — Promote user to admin\n' +
-        '├ /remove\\_admin — Demote admin\n' +
-        '└ /broadcast — Send message to all\n';
+        '*Super Admin buyruqlari:*\n' +
+        '├ /add\\_channel — Majburiy kanal qo\'shish\n' +
+        '├ /remove\\_channel — Kanalni o\'chirish\n' +
+        '├ /channels — Barcha kanallar ro\'yxati\n' +
+        '├ /stats — Bot statistikasi\n' +
+        '├ /add\\_admin — Admin qo\'shish\n' +
+        '├ /remove\\_admin — Adminni o\'chirish\n' +
+        '└ /broadcast — Hammaga xabar yuborish\n';
     } else {
       helpText +=
-        '*Admin Commands:*\n' +
-        '└ /broadcast — Send message to all users\n';
+        '*Admin buyruqlari:*\n' +
+        '├ /stats — Bot statistikasi\n' +
+        '└ /broadcast — Hammaga xabar yuborish\n';
     }
 
     await ctx.reply(helpText, { parse_mode: 'Markdown' });

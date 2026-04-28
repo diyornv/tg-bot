@@ -23,7 +23,7 @@ function subscriptionMiddleware(bot) {
     if (!subscribed) {
       const buttons = missingChannels.map((ch, i) => [
         {
-          text: `📢 Join ${ch.channel_title || `Channel ${i + 1}`}`,
+          text: `📢 ${ch.channel_title || `Kanal ${i + 1}`} ga qo'shilish`,
           url: ch.invite_link,
         },
       ]);
@@ -31,13 +31,13 @@ function subscriptionMiddleware(bot) {
       // Add "Check Subscription" button
       buttons.push([
         {
-          text: '✅ Check Subscription',
+          text: '✅ Obunani tekshirish',
           callback_data: 'check_subscription',
         },
       ]);
 
       await ctx.reply(
-        '🔒 *Access Restricted*\n\nYou must join the following channels to use this bot:',
+        '🔒 *Kirish cheklangan*\n\nBotdan foydalanish uchun quyidagi kanallarga obuna bo\'lishingiz kerak:',
         {
           parse_mode: 'Markdown',
           reply_markup: {

@@ -9,7 +9,7 @@ function requireRole(requiredRole) {
     const user = await getUserByTelegramId(ctx.from.id);
 
     if (!hasRole(user, requiredRole)) {
-      return ctx.reply('⛔ You do not have permission to use this command.');
+      return ctx.reply('⛔ Sizda bu buyruqni ishlatish huquqi yo\'q.');
     }
 
     // Attach user to context for downstream handlers

@@ -13,12 +13,12 @@ function registerMovieHandler(bot) {
 
     // Validate: must be alphanumeric code (letters, numbers, hyphens)
     if (!/^[a-zA-Z0-9\-_]+$/.test(text)) {
-      return ctx.reply('❌ Invalid code format. Please send a valid movie code.');
+      return ctx.reply('❌ Noto\'g\'ri kod formati. Iltimos, to\'g\'ri kino kodini yuboring.');
     }
 
     // Limit code length
     if (text.length > 50) {
-      return ctx.reply('❌ Code is too long. Please check and try again.');
+      return ctx.reply('❌ Kod juda uzun. Iltimos, tekshirib qaytadan yuboring.');
     }
 
     try {
@@ -26,27 +26,28 @@ function registerMovieHandler(bot) {
 
       if (!movie) {
         return ctx.reply(
-          '🔍 *Movie not found*\n\nNo movie matches the code `' + text + '`. Please check the code and try again.',
+          '🔍 *Kino topilmadi*\n\n`' + text + '` kodiga mos kino topilmadi. Iltimos, kodni tekshirib qaytadan yuboring.',
           { parse_mode: 'Markdown' }
         );
       }
 
       // Send movie with title caption
-      const caption = movie.title ? `🎬 *${movie.title}*\n\n📌 Code: \`${movie.code}\`` : `📌 Code: \`${movie.code}\``;
+      const caption = movie.title
+        ? `🎬 *${movie.title}*\n\n📌 Kod: \`${movie.code}\``
+        : `📌 Kod: \`${movie.code}\``;
 
       await ctx.replyWithVideo(movie.file_id, {
         caption,
         parse_mode: 'Markdown',
       });
     } catch (err) {
-      console.error('Movie fetch error:', err.message);
+      console.error('Kino olish xatosi:', err.message);
 
-      // Handle specific Telegram errors
       if (err.message.includes('wrong file_id')) {
-        return ctx.reply('⚠️ This movie file is no longer available. Please contact an admin.');
+        return ctx.reply('⚠️ Bu kino fayli endi mavjud emas. Iltimos, adminga murojaat qiling.');
       }
 
-      return ctx.reply('⚠️ An error occurred while fetching the movie. Please try again later.');
+      return ctx.reply('⚠️ Kinoni olishda xatolik yuz berdi. Keyinroq qaytadan urinib ko\'ring.');
     }
   });
 }

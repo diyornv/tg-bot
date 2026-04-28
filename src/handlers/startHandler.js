@@ -5,14 +5,14 @@ const { checkUserSubscription } = require('../services/channelService');
  */
 function registerStartHandler(bot) {
   bot.start(async (ctx) => {
-    const firstName = ctx.from.first_name || 'there';
+    const firstName = ctx.from.first_name || 'do\'stim';
     await ctx.reply(
-      `🎬 *Welcome, ${firstName}!*\n\n` +
-      `Send me a movie code (e.g., \`765\`) and I'll send you the movie.\n\n` +
-      `📌 *How it works:*\n` +
-      `1️⃣ Find a movie code from our channel\n` +
-      `2️⃣ Send the code here\n` +
-      `3️⃣ Get the movie instantly!`,
+      `🎬 *Assalomu alaykum, ${firstName}!*\n\n` +
+      `Menga kino kodini yuboring (masalan, \`330\`) va men sizga kinoni yuboraman.\n\n` +
+      `📌 *Qanday ishlaydi:*\n` +
+      `1️⃣ Kanaldan kino kodini toping\n` +
+      `2️⃣ Shu kodni menga yuboring\n` +
+      `3️⃣ Kinoni bir zumda oling!`,
       { parse_mode: 'Markdown' }
     );
   });
@@ -26,17 +26,17 @@ function registerStartHandler(bot) {
 
       if (subscribed) {
         await ctx.editMessageText(
-          '✅ *Subscription verified!*\n\nYou now have full access. Send /start to begin.',
+          '✅ *Obuna tasdiqlandi!*\n\nEndi botdan to\'liq foydalanishingiz mumkin. /start bosing.',
           { parse_mode: 'Markdown' }
         );
       } else {
-        await ctx.answerCbQuery('❌ You haven\'t joined all required channels yet.', {
+        await ctx.answerCbQuery('❌ Siz hali barcha kanallarga obuna bo\'lmagansiz.', {
           show_alert: true,
         });
       }
     } catch (err) {
-      console.error('Subscription check error:', err.message);
-      await ctx.answerCbQuery('An error occurred. Please try again.', {
+      console.error('Obuna tekshirish xatosi:', err.message);
+      await ctx.answerCbQuery('Xatolik yuz berdi. Qaytadan urinib ko\'ring.', {
         show_alert: true,
       });
     }

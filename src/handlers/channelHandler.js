@@ -5,14 +5,12 @@ const { upsertMovie } = require('../services/movieService');
  * Register the channel post handler.
  * Automatically extracts movie code and file_id from videos posted in the movie channel.
  *
- * Expected caption format:
+ * Supported caption formats:
  *   Code: 765
- *   Title: Movie Name (optional)
- *
- * Also supports:
- *   code: 765
- *   CODE: 765
+ *   code= 765
  *   #765
+ *   765          (plain number)
+ *   Title: Movie Name (optional)
  */
 function registerChannelHandler(bot) {
   bot.on('channel_post', async (ctx) => {
@@ -22,7 +20,7 @@ function registerChannelHandler(bot) {
       // Only process posts from the movie channel
       if (String(post.chat.id) !== String(config.movieChannelId)) return;
 
-      // Get file_id from video or document
+      // Get file_id from video, document, or animation
       let fileId = null;
       if (post.video) {
         fileId = post.video.file_id;
@@ -34,13 +32,17 @@ function registerChannelHandler(bot) {
 
       if (!fileId) return; // Not a media post, ignore
 
-      const caption = post.caption || '';
+      const caption = (post.caption || '').trim();
 
-      // Extract code from caption
+      if (!caption) {
+        console.warn('⚠️ Kanalda caption bo\'sh post bor, o\'tkazib yuborildi');
+        return;
+      }
+
       let code = null;
       let title = null;
 
-      // Pattern 1: "Code: 765" or "code: 765" (case-insensitive)
+      // Pattern 1: "Code: 765" or "code: 765" or "code=765" (case-insensitive)
       const codeMatch = caption.match(/code\s*[:=]\s*([a-zA-Z0-9\-_]+)/i);
       if (codeMatch) {
         code = codeMatch[1];
@@ -54,12 +56,20 @@ function registerChannelHandler(bot) {
         }
       }
 
+      // Pattern 3: Plain number/text on first line (e.g., "330" or "330\nTitle: ...")
       if (!code) {
-        console.warn('⚠️ Channel post has no code in caption:', caption.substring(0, 100));
+        const firstLine = caption.split('\n')[0].trim();
+        if (/^[a-zA-Z0-9\-_]+$/.test(firstLine) && firstLine.length <= 50) {
+          code = firstLine;
+        }
+      }
+
+      if (!code) {
+        console.warn('⚠️ Kanalda kodsi yo\'q post:', caption.substring(0, 100));
         return;
       }
 
-      // Extract title (optional)
+      // Extract title (optional) - "Title: Movie Name" or second line
       const titleMatch = caption.match(/title\s*[:=]\s*(.+)/i);
       if (titleMatch) {
         title = titleMatch[1].trim();
@@ -67,9 +77,9 @@ function registerChannelHandler(bot) {
 
       // Save to DB
       const movie = await upsertMovie(code, fileId, title);
-      console.log(`🎬 Movie saved: code=${movie.code}, title=${movie.title || 'N/A'}`);
+      console.log(`🎬 Kino saqlandi: code=${movie.code}, title=${movie.title || 'Nomsiz'}`);
     } catch (err) {
-      console.error('❌ Channel post processing error:', err.message);
+      console.error('❌ Kanal post qayta ishlash xatosi:', err.message);
     }
   });
 }
