@@ -1,0 +1,21 @@
+{
+  "name": "telegram-movie-bot",
+  "version": "1.0.0",
+  "description": "Production-ready Telegram movie bot with admin system",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js",
+    "db:init": "node src/db/init.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "pg": "^8.13.1",
+    "dotenv": "^16.4.7"
+  },
+  "keywords": ["telegram", "bot", "movie"],
+  "license": "MIT"
+}
