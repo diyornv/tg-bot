@@ -1,34 +1,44 @@
 const { checkUserSubscription } = require('../services/channelService');
+const { getUserByTelegramId } = require('../services/userService');
+const { superAdminKeyboard, adminKeyboard, userKeyboard } = require('../keyboards');
 
-/**
- * Register the /start command and subscription check callback.
- */
+async function sendWelcome(ctx, bot) {
+  const firstName = ctx.from.first_name || 'do\'stim';
+  const user = await getUserByTelegramId(ctx.from.id);
+  
+  let keyboard = userKeyboard;
+  if (user) {
+    if (user.role === 'superadmin') keyboard = superAdminKeyboard;
+    else if (user.role === 'admin') keyboard = adminKeyboard;
+  }
+
+  await ctx.reply(
+    `🎬 *Assalomu alaykum, ${firstName}!*\n\n` +
+    `Menga kino kodini yuboring (masalan, \`330\`) va men sizga kinoni yuboraman.\n\n` +
+    `📌 *Qanday ishlaydi:*\n` +
+    `1️⃣ Kanaldan kino kodini toping\n` +
+    `2️⃣ Shu kodni menga yuboring\n` +
+    `3️⃣ Kinoni bir zumda oling!`,
+    { 
+      parse_mode: 'Markdown',
+      reply_markup: keyboard.reply_markup
+    }
+  );
+}
+
 function registerStartHandler(bot) {
   bot.start(async (ctx) => {
-    const firstName = ctx.from.first_name || 'do\'stim';
-    await ctx.reply(
-      `🎬 *Assalomu alaykum, ${firstName}!*\n\n` +
-      `Menga kino kodini yuboring (masalan, \`330\`) va men sizga kinoni yuboraman.\n\n` +
-      `📌 *Qanday ishlaydi:*\n` +
-      `1️⃣ Kanaldan kino kodini toping\n` +
-      `2️⃣ Shu kodni menga yuboring\n` +
-      `3️⃣ Kinoni bir zumda oling!`,
-      { parse_mode: 'Markdown' }
-    );
+    await sendWelcome(ctx, bot);
   });
 
-  // Handle "Check Subscription" callback
   bot.action('check_subscription', async (ctx) => {
     try {
       await ctx.answerCbQuery();
-
       const { subscribed } = await checkUserSubscription(bot, ctx.from.id);
 
       if (subscribed) {
-        await ctx.editMessageText(
-          '✅ *Obuna tasdiqlandi!*\n\nEndi botdan to\'liq foydalanishingiz mumkin. /start bosing.',
-          { parse_mode: 'Markdown' }
-        );
+        await ctx.deleteMessage().catch(() => {});
+        await sendWelcome(ctx, bot);
       } else {
         await ctx.answerCbQuery('❌ Siz hali barcha kanallarga obuna bo\'lmagansiz.', {
           show_alert: true,
